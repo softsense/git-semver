@@ -15,7 +15,7 @@ jobs:
         with:
           go-version: '1.13'
       - name: 'Build git-semver'
-        run: go build -o git-semver cmd/git-semver
+        run: go build -o git-semver ./cmd/git-semver
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1.0.0
