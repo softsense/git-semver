@@ -1,0 +1,42 @@
+linters:
+  enable:
+    # default
+    - govet
+    - staticcheck
+    - unused
+    - gosimple
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - typecheck
+    # added
+    - golint
+    - stylecheck
+    - interfacer
+    - unconvert
+    - dupl
+    - goconst
+    - gofmt
+    - depguard
+    - unparam
+    - nakedret
+    - prealloc
+    - scopelint
+    - gocritic
+  disable:
+    - errcheck
+
+issues:
+  exclude:
+    - should not use basic type string as key in .*
+    - Using the variable on range scope .* in function literal
+
+run:
+  build-tags:
+    - db
+    - integration
+  tests: true
+  skip-dirs-use-default: false
+  skip-dirs:
+    - (^|/)vendor($|/)
