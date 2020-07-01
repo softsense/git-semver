@@ -33,8 +33,8 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.Flags().String("repo", "./", "path to git repository")
-	if err := viper.BindPFlag("repo", rootCmd.Flags().Lookup("repo")); err != nil {
+	rootCmd.PersistentFlags().String("repo", "./", "path to git repository")
+	if err := viper.BindPFlag("repo", rootCmd.PersistentFlags().Lookup("repo")); err != nil {
 		log.Fatal(err)
 	}
 
@@ -58,8 +58,8 @@ func init() {
 		log.Fatal(err)
 	}
 
-	rootCmd.Flags().String("prefix", "", "use a prefix")
-	if err := viper.BindPFlag("prefix", rootCmd.Flags().Lookup("prefix")); err != nil {
+	rootCmd.PersistentFlags().String("prefix", "", "use a prefix")
+	if err := viper.BindPFlag("prefix", rootCmd.PersistentFlags().Lookup("prefix")); err != nil {
 		log.Fatal(err)
 	}
 }
