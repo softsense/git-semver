@@ -8,6 +8,7 @@ import (
 	"github.com/softsense/git-semver/pkg/semver"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 type Config struct {
@@ -115,6 +116,44 @@ func (g *Git) Increment(major, minor, patch, dev bool) (semver.Version, error) {
 	}
 
 	return newVersion, nil
+}
+
+func (g *Git) History() (string, error) {
+	head, err := g.repo.Head()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get head")
+	}
+
+	var prevHash *plumbing.Hash
+	prevRef, err := g.repo.Tag(g.highest.String())
+	if err != nil {
+		fmt.Printf("Tag %s not found, including the entire history\n", g.highest.String())
+	} else {
+		cIter, err := g.repo.Log(&git.LogOptions{From: prevRef.Hash()})
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to get log from %s", prevRef.Hash())
+		}
+		c, err := cIter.Next()
+		if err == nil {
+			prevHash = &c.Hash
+		}
+	}
+
+	cIter, err := g.repo.Log(&git.LogOptions{From: head.Hash()})
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to get log from %s", head.Hash())
+	}
+	out := make([]string, 0)
+	_ = cIter.ForEach(func(c *object.Commit) error {
+		if prevHash != nil && c.Hash.String() == prevHash.String() {
+			return errors.New("EOF")
+		}
+		out = append(out, fmt.Sprintf("%s %s\n", c.Hash.String()[:7], strings.TrimSuffix(c.Message, "\n")))
+
+		return nil
+	})
+
+	return strings.Join(out, ""), nil
 }
 
 func parseTagRef(t string) (semver.Version, error) {

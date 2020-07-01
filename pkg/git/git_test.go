@@ -20,3 +20,19 @@ func TestOpen(t *testing.T) {
 
 	fmt.Println(n.String())
 }
+
+func TestHistory(t *testing.T) {
+	g, err := Open("../../", Config{
+		Prefix: "v",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	history, err := g.History()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Print(history)
+}
