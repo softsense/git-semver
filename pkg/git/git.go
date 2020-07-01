@@ -10,18 +10,25 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
+type Config struct {
+	// Prefix to add to version strings
+	Prefix string
+}
+
 type Git struct {
 	highest semver.Version
 	repo    *git.Repository
+	cfg     Config
 }
 
-func Open(path string) (*Git, error) {
+func Open(path string, cfg Config) (*Git, error) {
 	r, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open git repo %s", path)
 	}
 
 	var highest semver.Version
+	highest.Prefix = cfg.Prefix
 
 	all := make(map[string]semver.Version)
 
@@ -32,6 +39,11 @@ func Open(path string) (*Git, error) {
 	err = tagrefs.ForEach(func(t *plumbing.Reference) error {
 		n, err := parseTagRef(string(t.Name()))
 		if err != nil {
+			return nil
+		}
+
+		// only care about tags with the same prefix
+		if n.Prefix != cfg.Prefix {
 			return nil
 		}
 
@@ -60,6 +72,7 @@ func Open(path string) (*Git, error) {
 	g := &Git{
 		highest: highest,
 		repo:    r,
+		cfg:     cfg,
 	}
 
 	return g, nil
@@ -114,5 +127,5 @@ func parseTagRef(t string) (semver.Version, error) {
 }
 
 func format(v semver.Version) string {
-	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
+	return fmt.Sprintf("%s%d.%d.%d", v.Prefix, v.Major, v.Minor, v.Patch)
 }

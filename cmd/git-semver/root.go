@@ -16,7 +16,9 @@ var rootCmd = &cobra.Command{
 	Short: "A tool for bumping semantic versions based on git tags.",
 	Long:  `A tool for bumping semantic versions based on git tags.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		g, err := git.Open(viper.GetString("repo"))
+		g, err := git.Open(viper.GetString("repo"), git.Config{
+			Prefix: viper.GetString("prefix"),
+		})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -53,6 +55,11 @@ func init() {
 
 	rootCmd.Flags().Bool("snapshot", false, "set snapshot version")
 	if err := viper.BindPFlag("snapshot", rootCmd.Flags().Lookup("snapshot")); err != nil {
+		log.Fatal(err)
+	}
+
+	rootCmd.Flags().String("prefix", "", "use a prefix")
+	if err := viper.BindPFlag("prefix", rootCmd.Flags().Lookup("prefix")); err != nil {
 		log.Fatal(err)
 	}
 }

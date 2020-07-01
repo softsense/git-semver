@@ -9,6 +9,7 @@ This file is taken from https://github.com/blang/semver/blob/master/semver.go
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -28,11 +29,12 @@ var SpecVersion = Version{
 
 // Version represents a semver compatible version
 type Version struct {
-	Major uint64
-	Minor uint64
-	Patch uint64
-	Pre   []PRVersion
-	Build []string //No Precedence
+	Major  uint64
+	Minor  uint64
+	Patch  uint64
+	Pre    []PRVersion
+	Build  []string //No Precedence
+	Prefix string
 }
 
 // Version to string
@@ -43,6 +45,10 @@ func (v Version) String() string {
 	b = strconv.AppendUint(b, v.Minor, 10)
 	b = append(b, '.')
 	b = strconv.AppendUint(b, v.Patch, 10)
+
+	if len(v.Prefix) > 0 {
+		b = append([]byte(v.Prefix), b...)
+	}
 
 	if len(v.Pre) > 0 {
 		b = append(b, '-')
@@ -229,11 +235,10 @@ func Make(s string) (Version, error) {
 
 // ParseTolerant allows for certain version specifications that do not strictly adhere to semver
 // specs to be parsed by this library. It does so by normalizing versions before passing them to
-// Parse(). It currently trims spaces, removes a "v" prefix, adds a 0 patch number to versions
+// Parse(). It currently trims spaces, adds a 0 patch number to versions
 // with only major and minor components specified, and removes leading 0s.
 func ParseTolerant(s string) (Version, error) {
 	s = strings.TrimSpace(s)
-	s = strings.TrimPrefix(s, "v")
 
 	// Split into major.minor.(patch+pr+meta)
 	parts := strings.SplitN(s, ".", 3)
@@ -269,6 +274,14 @@ func Parse(s string) (Version, error) {
 		return Version{}, errors.New("No Major.Minor.Patch elements found")
 	}
 
+	// Prefix
+	var prefix string
+	re := regexp.MustCompile(`^[a-zA-Z]+`)
+	if re.Match([]byte(parts[0])) {
+		prefix = re.FindString(parts[0])
+		parts[0] = strings.Replace(parts[0], prefix, "", 1)
+	}
+
 	// Major
 	if !containsOnly(parts[0], numbers) {
 		return Version{}, fmt.Errorf("Invalid character(s) found in major number %q", parts[0])
@@ -294,6 +307,7 @@ func Parse(s string) (Version, error) {
 	}
 
 	v := Version{}
+	v.Prefix = prefix
 	v.Major = major
 	v.Minor = minor
 
