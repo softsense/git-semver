@@ -6,7 +6,9 @@ import (
 )
 
 func TestOpen(t *testing.T) {
-	g, err := Open("../../")
+	g, err := Open("../../", Config{
+		Prefix: "v",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
