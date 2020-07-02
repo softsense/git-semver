@@ -29,6 +29,7 @@ linters:
 
 issues:
   exclude:
+    - should not use built-in type string as key
     - should not use basic type string as key in .*
     - Using the variable on range scope .* in function literal
 
