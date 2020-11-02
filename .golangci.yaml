@@ -13,16 +13,14 @@ linters:
     # added
     - golint
     - stylecheck
-    - interfacer
     - unconvert
-    - dupl
     - goconst
     - gofmt
     - depguard
     - unparam
     - nakedret
     - prealloc
-    - scopelint
+    - exportloopref
     - gocritic
   disable:
     - errcheck
@@ -31,7 +29,11 @@ issues:
   exclude:
     - should not use built-in type string as key
     - should not use basic type string as key in .*
-    - Using the variable on range scope .* in function literal
+
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - goconst
 
 run:
   build-tags:
