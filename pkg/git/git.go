@@ -148,7 +148,7 @@ func (g *Git) History() (string, error) {
 		if prevHash != nil && c.Hash.String() == prevHash.String() {
 			return errors.New("EOF")
 		}
-		out = append(out, fmt.Sprintf("%s %s\n", c.Hash.String()[:7], strings.TrimSuffix(c.Message, "\n")))
+		out = append(out, fmt.Sprintf("%s %s\n\n", c.Hash.String()[:7], strings.TrimSuffix(c.Message, "\n")))
 
 		return nil
 	})
