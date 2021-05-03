@@ -1,12 +1,28 @@
 package git
 
 import (
-	"fmt"
+	"os"
+	"strings"
 	"testing"
+
+	"github.com/mholt/archiver"
+	"github.com/stretchr/testify/require"
 )
 
+func TestMain(m *testing.M) {
+	if err := archiver.Unarchive("testdata/repo.tar.gz", "testdata/"); err != nil {
+		panic(err)
+	}
+
+	exitCode := m.Run()
+
+	os.RemoveAll("testdata/repo")
+
+	os.Exit(exitCode)
+}
+
 func TestOpen(t *testing.T) {
-	g, err := Open("../../", Config{
+	g, err := Open("testdata/repo", Config{
 		Prefix: "v",
 	})
 	if err != nil {
@@ -18,21 +34,29 @@ func TestOpen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println(n.String())
+	t.Log("\n" + n.String())
+
+	require.Equal(t, "v0.0.3", n.String())
 }
 
 func TestHistory(t *testing.T) {
-	g, err := Open("../../", Config{
+	g, err := Open("./testdata/repo", Config{
 		Prefix: "v",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	history, err := g.History()
+	history, err := g.History("|||")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fmt.Print(history)
+	t.Log("\n" + history)
+
+	for _, l := range strings.Split(history, "\n") {
+		if l != "" && !strings.HasPrefix(l, "|||") {
+			t.Fatalf("Expected all lines to have prefix '|||', got line: '%s'", l)
+		}
+	}
 }

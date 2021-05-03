@@ -118,7 +118,7 @@ func (g *Git) Increment(major, minor, patch, dev bool) (semver.Version, error) {
 	return newVersion, nil
 }
 
-func (g *Git) History() (string, error) {
+func (g *Git) History(prefix string) (string, error) {
 	head, err := g.repo.Head()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get head")
@@ -148,7 +148,12 @@ func (g *Git) History() (string, error) {
 		if prevHash != nil && c.Hash.String() == prevHash.String() {
 			return errors.New("EOF")
 		}
-		out = append(out, fmt.Sprintf("%s %s\n\n", c.Hash.String()[:7], strings.TrimSuffix(c.Message, "\n")))
+		msg := fmt.Sprintf("%s* %s %s\n", prefix, c.Hash.String()[:7], strings.ReplaceAll(strings.TrimSuffix(c.Message, "\n"), "\n", "\n  "))
+		if prefix != "" {
+			msg = strings.ReplaceAll(msg, "\n", fmt.Sprintf("\n%s", prefix))
+		}
+		msg += "\n"
+		out = append(out, msg)
 
 		return nil
 	})
