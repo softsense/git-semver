@@ -11,6 +11,10 @@ import (
 
 func init() {
 	rootCmd.AddCommand(historyCmd)
+	historyCmd.PersistentFlags().String("msg-prefix", "", "use a prefix for the messages")
+	if err := viper.BindPFlag("msg-prefix", historyCmd.PersistentFlags().Lookup("msg-prefix")); err != nil {
+		log.Fatal(err)
+	}
 }
 
 var historyCmd = &cobra.Command{
@@ -24,7 +28,7 @@ var historyCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		history, err := g.History()
+		history, err := g.History(viper.GetString("msg-prefix"))
 		if err != nil {
 			log.Fatal(err)
 		}
