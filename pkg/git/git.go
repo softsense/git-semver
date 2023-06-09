@@ -14,6 +14,9 @@ import (
 type Config struct {
 	// Prefix to add to version strings
 	Prefix string
+
+	// Only look at tags below version
+	Below *semver.Version
 }
 
 type Git struct {
@@ -59,6 +62,9 @@ func Open(path string, cfg Config) (*Git, error) {
 		}
 
 		if len(n.Pre) > 0 {
+			return nil
+		}
+		if cfg.Below != nil && n.GTE(*cfg.Below) {
 			return nil
 		}
 		if n.GT(highest) {
