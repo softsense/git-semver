@@ -167,6 +167,10 @@ func (g *Git) History(prefix string) (string, error) {
 	return strings.Join(out, ""), nil
 }
 
+func (g *Git) Highest() semver.Version {
+	return g.highest
+}
+
 func parseTagRef(t string) (semver.Version, error) {
 	s := strings.Replace(t, "refs/tags/", "", 1)
 	v, err := semver.Parse(s)
