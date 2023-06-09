@@ -9,6 +9,7 @@ Usage:
   git-semver [flags]
 
 Flags:
+      --below string    only look at tags below version
   -h, --help            help for git-semver
       --major           bump major version
       --minor           bump minor version

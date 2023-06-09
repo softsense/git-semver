@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/softsense/git-semver/pkg/git"
+	"github.com/softsense/git-semver/pkg/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -16,8 +17,17 @@ var rootCmd = &cobra.Command{
 	Short: "A tool for bumping semantic versions based on git tags.",
 	Long:  `A tool for bumping semantic versions based on git tags.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var below *semver.Version
+		if viper.GetString("below") != "" {
+			v, err := semver.Parse(viper.GetString("below"))
+			if err != nil {
+				log.Fatal(err)
+			}
+			below = &v
+		}
 		g, err := git.Open(viper.GetString("repo"), git.Config{
 			Prefix: viper.GetString("prefix"),
+			Below:  below,
 		})
 		if err != nil {
 			log.Fatal(err)
@@ -60,6 +70,11 @@ func init() {
 
 	rootCmd.PersistentFlags().String("prefix", "", "use a prefix")
 	if err := viper.BindPFlag("prefix", rootCmd.PersistentFlags().Lookup("prefix")); err != nil {
+		log.Fatal(err)
+	}
+
+	rootCmd.PersistentFlags().String("below", "", "only look at tags below version")
+	if err := viper.BindPFlag("below", rootCmd.PersistentFlags().Lookup("below")); err != nil {
 		log.Fatal(err)
 	}
 }
