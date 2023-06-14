@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/softsense/git-semver/pkg/git"
+	"github.com/softsense/git-semver/pkg/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -21,8 +22,17 @@ var historyCmd = &cobra.Command{
 	Use:   "history",
 	Short: "Print history since last tag.",
 	Run: func(cmd *cobra.Command, args []string) {
+		var below *semver.Version
+		if viper.GetString("below") != "" {
+			v, err := semver.Parse(viper.GetString("below"))
+			if err != nil {
+				log.Fatal(err)
+			}
+			below = &v
+		}
 		g, err := git.Open(viper.GetString("repo"), git.Config{
 			Prefix: viper.GetString("prefix"),
+			Below:  below,
 		})
 		if err != nil {
 			log.Fatal(err)
