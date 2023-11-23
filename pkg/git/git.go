@@ -1,10 +1,10 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/softsense/git-semver/pkg/semver"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -28,7 +28,7 @@ type Git struct {
 func Open(path string, cfg Config) (*Git, error) {
 	r, err := git.PlainOpen(path)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open git repo %s", path)
+		return nil, fmt.Errorf("open git repo %s: %w", path, err)
 	}
 
 	var highest semver.Version
@@ -38,7 +38,7 @@ func Open(path string, cfg Config) (*Git, error) {
 
 	tagrefs, err := r.Tags()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list tags")
+		return nil, fmt.Errorf("list tags: %w", err)
 	}
 	err = tagrefs.ForEach(func(t *plumbing.Reference) error {
 		n, err := parseTagRef(string(t.Name()))
@@ -73,7 +73,7 @@ func Open(path string, cfg Config) (*Git, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to loop over tags")
+		return nil, fmt.Errorf("loop over tags: %w", err)
 	}
 
 	g := &Git{
@@ -88,35 +88,35 @@ func Open(path string, cfg Config) (*Git, error) {
 func (g *Git) Increment(major, minor, patch, dev bool) (semver.Version, error) {
 	newVersion, err := semver.Parse(g.highest.String())
 	if err != nil {
-		return semver.Version{}, errors.Wrapf(err, "failed to create version")
+		return semver.Version{}, fmt.Errorf("create version: %w", err)
 	}
 
 	if patch {
 		if err := newVersion.IncrementPatch(); err != nil {
-			return semver.Version{}, errors.Wrap(err, "failed to increment")
+			return semver.Version{}, fmt.Errorf("increment: %w", err)
 		}
 	}
 
 	if minor {
 		if err := newVersion.IncrementMinor(); err != nil {
-			return semver.Version{}, errors.Wrap(err, "failed to increment")
+			return semver.Version{}, fmt.Errorf("increment: %w", err)
 		}
 	}
 
 	if major {
 		if err := newVersion.IncrementMajor(); err != nil {
-			return semver.Version{}, errors.Wrap(err, "failed to increment")
+			return semver.Version{}, fmt.Errorf("increment: %w", err)
 		}
 	}
 
 	if dev {
 		head, err := g.repo.Head()
 		if err != nil {
-			return semver.Version{}, errors.Wrap(err, "failed to get repo head")
+			return semver.Version{}, fmt.Errorf("get repo head: %w", err)
 		}
 		snapshot, err := semver.NewPRVersion(fmt.Sprintf("snapshot-%s", head.Hash().String()[:7]))
 		if err != nil {
-			return semver.Version{}, errors.Wrap(err, "failed to build snapshot version")
+			return semver.Version{}, fmt.Errorf("build snapshot version: %w", err)
 		}
 		newVersion.Pre = []semver.PRVersion{snapshot}
 	}
@@ -127,7 +127,7 @@ func (g *Git) Increment(major, minor, patch, dev bool) (semver.Version, error) {
 func (g *Git) History(prefix string) (string, error) {
 	head, err := g.repo.Head()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get head")
+		return "", fmt.Errorf("get head: %w", err)
 	}
 
 	var prevHash *plumbing.Hash
@@ -137,7 +137,7 @@ func (g *Git) History(prefix string) (string, error) {
 	} else {
 		cIter, err := g.repo.Log(&git.LogOptions{From: prevRef.Hash()})
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to get log from %s", prevRef.Hash())
+			return "", fmt.Errorf("get log from %s: %w", prevRef.Hash(), err)
 		}
 		c, err := cIter.Next()
 		if err == nil {
@@ -147,7 +147,7 @@ func (g *Git) History(prefix string) (string, error) {
 
 	cIter, err := g.repo.Log(&git.LogOptions{From: head.Hash()})
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to get log from %s", head.Hash())
+		return "", fmt.Errorf("get log from %s: %w", head.Hash(), err)
 	}
 	out := make([]string, 0)
 	_ = cIter.ForEach(func(c *object.Commit) error {
