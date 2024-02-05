@@ -3,12 +3,18 @@ package git
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/softsense/git-semver/pkg/semver"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+)
+
+var (
+	prNumFromCommit = regexp.MustCompile(`\(#([0-9]+)\)($|\n)`)
+	gitHostAndPath  = regexp.MustCompile(`git@(.+):(.*)\.git`)
 )
 
 type Config struct {
@@ -159,6 +165,8 @@ func (g *Git) History(prefix string) (string, error) {
 			msg = strings.ReplaceAll(msg, "\n", fmt.Sprintf("\n%s", prefix))
 		}
 		msg += "\n"
+		msg = insertPullRequestURL(msg, g)
+
 		out = append(out, msg)
 
 		return nil
@@ -169,6 +177,30 @@ func (g *Git) History(prefix string) (string, error) {
 
 func (g *Git) Highest() semver.Version {
 	return g.highest
+}
+
+// insertPullRequestURL replaces GitHub PR references in commit messages
+// with the full URL to the PR.
+func insertPullRequestURL(msg string, git *Git) string {
+	remotes, err := git.repo.Remotes()
+	if err != nil || len(remotes) < 1 {
+		return msg
+	}
+	if len(remotes[0].Config().URLs) < 1 {
+		return msg
+	}
+	url := remotes[0].Config().URLs[0]
+	if !(strings.HasPrefix(url, "git@github.com") || strings.HasPrefix(url, "https://github.com")) {
+		return msg
+	}
+
+	// Convert non-HTTPS URL to HTTPS
+	url = gitHostAndPath.ReplaceAllString(url, "https://$1/$2")
+
+	link := fmt.Sprintf("[(#$1)](%s/pull/$1)$2", url)
+	msg = prNumFromCommit.ReplaceAllString(msg, link)
+
+	return msg
 }
 
 func parseTagRef(t string) (semver.Version, error) {
