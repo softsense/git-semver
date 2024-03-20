@@ -16,6 +16,16 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	// repo.tar.gz has:
+	// v0.0.1
+	// v0.0.2
+	// v0.0.3-rc1
+	//
+	// repo-rc.tar.gz has:
+	// v0.0.1
+	// v0.0.2
+	// v0.3.0
+
 	for _, name := range []string{"repo.tar.gz", "repo-rc.tar.gz"} {
 		if err := archiver.Unarchive(fmt.Sprintf("testdata/%s", name), "testdata/"); err != nil {
 			panic(err)
