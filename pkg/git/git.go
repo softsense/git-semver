@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/softsense/git-semver/pkg/semver"
@@ -23,6 +24,9 @@ type Config struct {
 
 	// Only look at tags below version
 	Below *semver.Version
+
+	// Include ReleaseCandidate Version
+	IncludeRC bool
 }
 
 type Git struct {
@@ -68,7 +72,9 @@ func Open(path string, cfg Config) (*Git, error) {
 		}
 
 		if len(n.Pre) > 0 {
-			return nil
+			if !cfg.IncludeRC || !strings.HasPrefix(n.Pre[0].String(), "rc") {
+				return nil
+			}
 		}
 		if cfg.Below != nil && n.GTE(*cfg.Below) {
 			return nil
@@ -91,10 +97,40 @@ func Open(path string, cfg Config) (*Git, error) {
 	return g, nil
 }
 
-func (g *Git) Increment(major, minor, patch, dev bool) (semver.Version, error) {
+func (g *Git) Increment(major, minor, patch, dev bool, rc bool) (semver.Version, error) {
 	newVersion, err := semver.Parse(g.highest.String())
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("create version: %w", err)
+	}
+
+	if rc {
+		found := false
+		for i, pre := range newVersion.Pre {
+			if strings.HasPrefix(pre.VersionStr, "rc") {
+				rcNumStr := strings.Replace(pre.VersionStr, "rc", "", 1)
+				rcNum, err := strconv.Atoi(rcNumStr)
+				if err != nil {
+					return semver.Version{}, fmt.Errorf("parse rc number: %w", err)
+				}
+				rcNum++
+				newVersion.Pre[i], err = semver.NewPRVersion(fmt.Sprintf("rc%d", rcNum))
+				if err != nil {
+					return semver.Version{}, fmt.Errorf("create rc version: %w", err)
+				}
+				found = true
+				patch = false
+				minor = false
+				major = false
+				break
+			}
+		}
+		if !found {
+			rcVer, err := semver.NewPRVersion("rc1")
+			if err != nil {
+				return semver.Version{}, fmt.Errorf("build rc version: %w", err)
+			}
+			newVersion.Pre = []semver.PRVersion{rcVer}
+		}
 	}
 
 	if patch {
