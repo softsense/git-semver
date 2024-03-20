@@ -31,8 +31,9 @@ var historyCmd = &cobra.Command{
 			below = &v
 		}
 		g, err := git.Open(viper.GetString("repo"), git.Config{
-			Prefix: viper.GetString("prefix"),
-			Below:  below,
+			Prefix:    viper.GetString("prefix"),
+			Below:     below,
+			IncludeRC: viper.GetBool("rc"),
 		})
 		if err != nil {
 			log.Fatal(err)

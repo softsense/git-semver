@@ -65,7 +65,7 @@ func init() {
 	}
 
 	rootCmd.PersistentFlags().Bool("rc", false, "bump rc version. will bump other version if an rc does not already exist.")
-	if err := viper.BindPFlag("rc", rootCmd.Flags().Lookup("rc")); err != nil {
+	if err := viper.BindPFlag("rc", rootCmd.PersistentFlags().Lookup("rc")); err != nil {
 		log.Fatal(err)
 	}
 
