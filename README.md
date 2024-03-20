@@ -14,6 +14,8 @@ Flags:
       --major           bump major version
       --minor           bump minor version
       --patch           bump patch version (default true)
+      --rc              bump rc version. will bump other version if an rc does
+                        not already exist.
       --repo string     path to git repository (default "./")
       --snapshot        set snapshot version
       --prefix string   use a prefix

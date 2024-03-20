@@ -34,7 +34,7 @@ func TestOpen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	n, err := g.Increment(false, false, true, false)
+	n, err := g.Increment(false, false, true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
