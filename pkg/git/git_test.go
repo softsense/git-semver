@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -15,13 +16,16 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	if err := archiver.Unarchive("testdata/repo.tar.gz", "testdata/"); err != nil {
-		panic(err)
+	for _, name := range []string{"repo.tar.gz", "repo-rc.tar.gz"} {
+		if err := archiver.Unarchive(fmt.Sprintf("testdata/%s", name), "testdata/"); err != nil {
+			panic(err)
+		}
 	}
 
 	exitCode := m.Run()
 
 	os.RemoveAll("testdata/repo")
+	os.RemoveAll("testdata/repo-rc")
 
 	os.Exit(exitCode)
 }
@@ -75,6 +79,119 @@ func TestBelow(t *testing.T) {
 			})
 			require.NoError(t, err)
 			require.Equal(t, test.expect, g.Highest())
+		})
+	}
+}
+
+func TestRC(t *testing.T) {
+	tests := []struct {
+		name      string
+		expect    semver.Version
+		includeRC bool
+	}{
+		{
+			name:   "no rc",
+			expect: semver.MustParse("v0.0.2"),
+		},
+		{
+			name:      "with rc",
+			expect:    semver.MustParse("v0.0.3-rc1"),
+			includeRC: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			g, err := Open("testdata/repo", Config{
+				Prefix:    "v",
+				IncludeRC: test.includeRC,
+			})
+			require.NoError(t, err)
+			require.Equal(t, test.expect, g.Highest())
+		})
+	}
+}
+
+func TestRC_Increment(t *testing.T) {
+	type increment struct {
+		major bool
+		minor bool
+		patch bool
+		rc    bool
+	}
+
+	tests := []struct {
+		name      string
+		repo      string
+		expect    semver.Version
+		below     *semver.Version
+		prefix    string
+		includeRC bool
+		increment increment
+	}{
+		{
+			name:      "no rc, increment patch",
+			repo:      "repo",
+			expect:    semver.MustParse("v0.0.3"),
+			increment: increment{patch: true},
+		},
+		{
+			name:      "no rc, increment minor",
+			repo:      "repo",
+			expect:    semver.MustParse("v0.1.0"),
+			increment: increment{minor: true},
+		},
+		{
+			name:      "no rc, increment major",
+			repo:      "repo",
+			expect:    semver.MustParse("v1.0.0"),
+			increment: increment{major: true},
+		},
+		{
+			name:      "with rc, increment patch",
+			repo:      "repo-rc",
+			expect:    semver.MustParse("v0.0.3-rc1"),
+			below:     ptr(semver.MustParse("v0.1.0")),
+			includeRC: true,
+			increment: increment{patch: true, rc: true},
+		},
+		{
+			name:      "with rc, increment minor",
+			repo:      "repo-rc",
+			expect:    semver.MustParse("v0.1.0-rc1"),
+			below:     ptr(semver.MustParse("v0.0.3")),
+			includeRC: true,
+			increment: increment{minor: true, rc: true},
+		},
+		{
+			name:      "with rc, increment minor where exists",
+			repo:      "repo-rc",
+			expect:    semver.MustParse("v0.4.0-rc1"),
+			below:     ptr(semver.MustParse("v0.9.0")),
+			includeRC: true,
+			increment: increment{minor: true, rc: true},
+		},
+		{
+			name:      "with rc, increment major",
+			repo:      "repo-rc",
+			expect:    semver.MustParse("v1.0.0-rc1"),
+			below:     ptr(semver.MustParse("v0.1.0")),
+			includeRC: true,
+			increment: increment{major: true, rc: true},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			g, err := Open(fmt.Sprintf("testdata/%s", test.repo), Config{
+				Prefix:    "v",
+				Below:     test.below,
+				IncludeRC: test.includeRC,
+			})
+			require.NoError(t, err)
+			got, err := g.Increment(test.increment.major, test.increment.minor, test.increment.patch, false, test.increment.rc)
+			require.NoError(t, err)
+			require.Equal(t, test.expect, got)
 		})
 	}
 }
@@ -165,4 +282,8 @@ func TestInsertPullRequestURL(t *testing.T) {
 			assert.Equal(t, tc.want, msg)
 		})
 	}
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }
