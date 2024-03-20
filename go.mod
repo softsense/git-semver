@@ -1,6 +1,8 @@
 module github.com/softsense/git-semver
 
-go 1.21.7
+go 1.21.3
+
+toolchain go1.21.7
 
 require (
 	github.com/mholt/archiver v3.1.1+incompatible

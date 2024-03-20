@@ -1,18 +1,19 @@
-name: 'Push to master branch'
+name: "Push to master branch"
 on:
   push:
     branches:
-     - master
+      - master
   pull_request:
 
 jobs:
   build:
-    name: 'Test'
+    name: "Test"
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout'
+      - name: "Checkout"
         uses: actions/checkout@master
       - uses: actions/setup-go@v1
         with:
-          go-version: '1.14'
+          go-version: "1.21"
       - run: go test ./...
+
