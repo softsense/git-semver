@@ -428,6 +428,10 @@ func (v PRVersion) Compare(o PRVersion) int {
 	} else { // both are Alphas
 		if v.VersionStr == o.VersionStr { //nolint
 			return 0
+		} else if len(v.VersionStr) > len(o.VersionStr) {
+			return 1
+		} else if len(v.VersionStr) < len(o.VersionStr) {
+			return -1
 		} else if v.VersionStr > o.VersionStr {
 			return 1
 		} else {
