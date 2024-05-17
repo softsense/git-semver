@@ -16,6 +16,8 @@ jobs:
           go-version: "1.21"
       - name: "Build git-semver"
         run: go build -o git-semver ./cmd/git-semver
+        env:
+          CGO_ENABLED: "0"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1.0.0
@@ -37,4 +39,3 @@ jobs:
           asset_path: ./git-semver
           asset_name: git-semver
           asset_content_type: application/octet-stream
-
