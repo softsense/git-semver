@@ -58,6 +58,15 @@ func TestOpen(t *testing.T) {
 	require.Equal(t, "v0.0.3", n.String())
 }
 
+func TestOpenNonExistingPath(t *testing.T) {
+	_, err := Open("testdata/does-not-exist", Config{
+		Prefix: "v",
+	})
+
+	require.Error(t, err)
+	require.EqualError(t, err, "open git repo testdata/does-not-exist: repository does not exist")
+}
+
 func TestBelow(t *testing.T) {
 	tests := []struct {
 		name   string
