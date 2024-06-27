@@ -380,12 +380,11 @@ func TestParse(t *testing.T) {
 			version: "0.0",
 			wantErr: errors.New("no Major.Minor.Patch elements found"),
 		},
-		// {
-		// 	// TODO: This case is not defensively handled, it confuses it with a prefix.
-		// 	name:    "major.0.1",
-		// 	version: "major.0.1",
-		// 	wantErr: errors.New(`only numbers`),
-		// },
+		{
+			name:    "major.0.1",
+			version: "major.0.1",
+			wantErr: errors.New(`missing major version number "major.0.1"`),
+		},
 		{
 			name:    "0NaN.0.1",
 			version: "0NaN.0.1",

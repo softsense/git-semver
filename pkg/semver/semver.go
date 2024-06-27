@@ -280,6 +280,9 @@ func Parse(s string) (Version, error) {
 	if re.Match([]byte(parts[0])) {
 		prefix = re.FindString(parts[0])
 		parts[0] = strings.Replace(parts[0], prefix, "", 1)
+		if len(parts[0]) < 1 {
+			return Version{}, fmt.Errorf("missing major version number %q", s)
+		}
 	}
 
 	// Major
