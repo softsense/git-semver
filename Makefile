@@ -20,8 +20,9 @@ lint:
 
 .PHONY: test
 test:
-	go test $(TEST_OPTS) -race ./... -coverprofile=coverage.txt
-	go tool cover -html=coverage.txt -o coverage.html
+	go test $(TEST_OPTS) -race ./... -coverprofile=coverage.tmp && grep -vE 'cmd/.*' coverage.tmp > coverage.out
+	go tool cover -html ./coverage.out -o coverage.html
+	go tool cover -func ./coverage.out -o coverage.txt
 
 .PHONY: integration-test
 integration-test:

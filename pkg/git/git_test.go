@@ -58,6 +58,15 @@ func TestOpen(t *testing.T) {
 	require.Equal(t, "v0.0.3", n.String())
 }
 
+func TestOpenNonExistingPath(t *testing.T) {
+	_, err := Open("testdata/does-not-exist", Config{
+		Prefix: "v",
+	})
+
+	require.Error(t, err)
+	require.EqualError(t, err, "open git repo testdata/does-not-exist: repository does not exist")
+}
+
 func TestBelow(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -127,6 +136,7 @@ func TestRC_Increment(t *testing.T) {
 		major bool
 		minor bool
 		patch bool
+		dev   bool
 		rc    bool
 	}
 
@@ -189,6 +199,29 @@ func TestRC_Increment(t *testing.T) {
 			includeRC: true,
 			increment: increment{major: true, rc: true},
 		},
+		{
+			name:      "with rc, increment rc",
+			repo:      "repo-rc",
+			expect:    semver.MustParse("v0.0.2-rc1"),
+			below:     ptr(semver.MustParse("v0.1.0")),
+			includeRC: true,
+			increment: increment{rc: true},
+		},
+		{
+			name:      "with rc, increment existing rc",
+			repo:      "repo",
+			expect:    semver.MustParse("v0.0.3-rc2"),
+			below:     ptr(semver.MustParse("v0.1.0")),
+			includeRC: true,
+			increment: increment{rc: true},
+		},
+		{
+			name:      "no rc, increment dev (snapshot)",
+			repo:      "repo-rc",
+			expect:    semver.MustParse("v0.0.2-snapshot-cf85392"),
+			below:     ptr(semver.MustParse("v0.1.0")),
+			increment: increment{dev: true},
+		},
 	}
 
 	for _, test := range tests {
@@ -199,7 +232,7 @@ func TestRC_Increment(t *testing.T) {
 				IncludeRC: test.includeRC,
 			})
 			require.NoError(t, err)
-			got, err := g.Increment(test.increment.major, test.increment.minor, test.increment.patch, false, test.increment.rc)
+			got, err := g.Increment(test.increment.major, test.increment.minor, test.increment.patch, test.increment.dev, test.increment.rc)
 			require.NoError(t, err)
 			require.Equal(t, test.expect, got)
 		})
