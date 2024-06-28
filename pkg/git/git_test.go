@@ -200,7 +200,7 @@ func TestRC_Increment(t *testing.T) {
 			increment: increment{major: true, rc: true},
 		},
 		{
-			name:      "with, increment rc",
+			name:      "with rc, increment rc",
 			repo:      "repo-rc",
 			expect:    semver.MustParse("v0.0.2-rc1"),
 			below:     ptr(semver.MustParse("v0.1.0")),
