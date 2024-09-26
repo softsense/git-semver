@@ -1,27 +1,25 @@
 linters:
   enable:
     # default
+    - gosimple
     - govet
+    - ineffassign
     - staticcheck
     - unused
-    - gosimple
-    - structcheck
-    - varcheck
-    - ineffassign
-    - deadcode
-    - typecheck
     # added
-    - golint
+    - typecheck
     - stylecheck
     - unconvert
     - goconst
     - gofmt
-    - depguard
     - unparam
     - nakedret
     - prealloc
-    - exportloopref
+    - copyloopvar
     - gocritic
+    - revive
+    - gocyclo
+    - funlen
   disable:
     - errcheck
 
@@ -34,12 +32,14 @@ issues:
     - path: _test\.go
       linters:
         - goconst
+        - funlen
+
+  exclude-dirs:
+    - (^|/)vendor($|/)
+  exclude-dirs-use-default: false
 
 run:
   build-tags:
     - db
     - integration
   tests: true
-  skip-dirs-use-default: false
-  skip-dirs:
-    - (^|/)vendor($|/)
