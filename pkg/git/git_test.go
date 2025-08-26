@@ -1,12 +1,15 @@
 package git
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archives"
 	"github.com/softsense/git-semver/pkg/semver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,9 +28,11 @@ func TestMain(m *testing.M) {
 	// v0.0.1
 	// v0.0.2
 	// v0.3.0
+	//
+	ctx := context.Background()
 
 	for _, name := range []string{"repo.tar.gz", "repo-rc.tar.gz"} {
-		if err := archiver.Unarchive(fmt.Sprintf("testdata/%s", name), "testdata/"); err != nil {
+		if err := untarGz(ctx, filepath.Join("testdata", name), "testdata"); err != nil {
 			panic(err)
 		}
 	}
@@ -232,7 +237,13 @@ func TestRC_Increment(t *testing.T) {
 				IncludeRC: test.includeRC,
 			})
 			require.NoError(t, err)
-			got, err := g.Increment(test.increment.major, test.increment.minor, test.increment.patch, test.increment.dev, test.increment.rc)
+			got, err := g.Increment(
+				test.increment.major,
+				test.increment.minor,
+				test.increment.patch,
+				test.increment.dev,
+				test.increment.rc,
+			)
 			require.NoError(t, err)
 			require.Equal(t, test.expect, got)
 		})
@@ -329,4 +340,44 @@ func TestInsertPullRequestURL(t *testing.T) {
 
 func ptr[T any](v T) *T {
 	return &v
+}
+
+func untarGz(ctx context.Context, archivePath, destDir string) error {
+	f, err := os.Open(archivePath)
+	if err != nil {
+		return fmt.Errorf("open %s: %w", archivePath, err)
+	}
+	defer f.Close()
+
+	format := archives.CompressedArchive{
+		Compression: archives.Gz{},
+		Extraction:  archives.Tar{},
+	}
+
+	return format.Extract(ctx, f, func(ctx context.Context, fi archives.FileInfo) error {
+		outPath := filepath.Join(destDir, fi.NameInArchive)
+
+		if fi.IsDir() {
+			return os.MkdirAll(outPath, 0o755)
+		}
+
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+			return err
+		}
+
+		rc, err := fi.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		out, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fi.Mode().Perm())
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, rc)
+		return err
+	})
 }
